@@ -12,80 +12,92 @@
 
 using namespace std;
 
-/*
- * 
- */
-string convBase(unsigned long v, long base)
-{
-	string digits = "0123456789abcdef";
-	string result;
-	if((base < 2) || (base > 16)) {
-		result = "Error: base out of range.";
-	}
-	else {
-		do {
-			result = digits[v % base] + result;
-			v /= base;
-		}
-		while(v);
-	}
-	return result;
+void Usage_Text(){
+    cout<<"Usage hexview filename [-o Offset] [-l Length]"<<endl;
 }
+int main(int argc, char** argv) {   
+    long File_Offset = 0;
+    char *Filename;
+    long Data_Length = 0;
+    long End_Pos = 0;
+    char *buf;
+    
+    //check parameter
+    //for(int i=0;i<argc;i++)
+      //  cout<<argv[i]<<endl;
+    
+    if(argc>1){
+        //check filename
+        Filename = argv[1];
+        //open file
+        ifstream f (Filename, ifstream::binary);
+               
+        if(f){ 
+            //cout<<"Open file already"<<endl;
+            f.seekg(0,f.end);
+            Data_Length = f.tellg();
+            f.seekg(0,f.beg);
+            buf = new char[Data_Length];
+            End_Pos = Data_Length - 1;
+            f.read(buf,Data_Length);
 
-int main(int argc, char** argv) {
-    cout<<"Hello World"<<endl;
-    //cout << "0x" << setfill('0') << setw(2) << hex << 10 << endl;
-    
-    //ifstream f ("/Users/kipkea/nesdev/hexview/test.txt", ifstream::binary);
-    ifstream f ("/Users/kipkea/nesdev/hexview/TANK.NES", ifstream::binary);
-    
-    if(f){ 
-        cout<<"Open file already"<<endl;
-        f.seekg(0,f.end);
-        long length = f.tellg();
-        f.seekg(0,f.beg);
-        
-        char *buf = new char[length];
-        
-        f.read(buf,length);
-        
-        cout<<"reading "<<length<<" Characters... Size of Buf "<<sizeof(buf[0])*length<<endl;
-                
-        
-        
-        if(f) cout<<"OK"<<endl;
-        else cout<<"error"<<endl;
-        
-        long File_Offset=0;
-        
-        //print hex
-        for(int i = 0; i<=length; i+=16){
-            
-            unsigned out2 = (buf[i]<=0x7e && buf[i]>=0x20)? buf[i]:20;
-            //cout<<convBase(buf[i],16);
-            //cout<<setw(6)<<setfill('0')<<i<<endl;
-            cout<<setw(6)<<setfill('0')<<hex<<uppercase<<i;
-            //cout<<setfill('0')<<setw(2)<<hex<<uppercase<<out<<":"<<dec<<out2<<"]";    
- 
-            for(int j = i; j<=i+16; j++){
-                unsigned out = static_cast<unsigned char>(buf[j]);
-                cout<<setfill('0')<<setw(2)<<hex<<uppercase<<out<<" ";
-            }
-            
-            for(int j = i; j<=i+16; j++){
-                unsigned out2 = (buf[j]<=0x7e && buf[j]>=0x20)? buf[j]:32;
-                cout<<static_cast<char>(out2);
-            }            
-            //printf("%02x ",static_cast<unsigned char>(buf[i]));
-            cout<<endl;
+            //cout<<"reading "<<Data_Length<<" Characters... Size of Buffer "<<sizeof(buf[0])*Data_Length<<endl;            
+        }else{
+            Usage_Text();
+            return 0;
         };
         
-        delete[] buf;
+        if(argc>2){
+            //cout<<"check Argument"<<endl;
+            if(strncmp(argv[2],"-o",2)==0){
+                //check offset
+                File_Offset = atoi(argv[3]);
+                //End_Pos = Data_Length - File_Offset - 1;
+                
+                if(argc>4){
+                    if(strncmp(argv[4],"-l",2)==0){
+                        //check length
+                        End_Pos = File_Offset + atoi(argv[5]);            
+                    }
+                }               
+            }
+        }
         
-    } else cout<<"Can't Open file"<<endl;
+        //cout<<"Print Hex now ... Offset = "<<File_Offset<<" Data Length = "<<Data_Length<<" End Pos = "<<End_Pos<<endl;
+        //print hex
+        for(int i = File_Offset; i<=End_Pos; i+=16){
+            cout<<setw(6)<<setfill('0')<<hex<<uppercase<<i<<" ";
+
+            for(int j = i; j<i+16; j++){
+                if(j>=End_Pos){
+                    cout<<"-- ";
+                }else{
+                    unsigned out = static_cast<unsigned char>(buf[j]);
+                    cout<<setfill('0')<<setw(2)<<hex<<uppercase<<out<<" ";
+                }
+            }
+
+            for(int j = i; j<i+16; j++){
+                if(j>=End_Pos){
+                    cout<<" ";
+                }else{                
+                    unsigned out2 = (buf[j]<=0x7e && buf[j]>=0x20)? buf[j]:32;
+                    cout<<static_cast<char>(out2);
+                }
+            } 
+                       
+            cout<<endl;
+        };
+
+        //clear buffer and close file
+        delete []buf;
+        f.close();
+        
+    }else{
+        Usage_Text();
+    }
     
-    f.close();
-            
+      
     return 0;
 }
 
